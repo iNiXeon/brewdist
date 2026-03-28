@@ -1,0 +1,47 @@
+# BrewDist Custom Non-Commercial License
+Copyright (c) 2026 Evgeny Yagzhin (mixeon@gmail.com)
+
+## ENGLISH VERSION
+
+### 1. PERMITTED USE
+You are granted a non-exclusive, non-transferable license to:
+* Download, compile, and use this software for personal, non-commercial brewing and distilling applications.
+* Modify the source code to suit your specific hardware configuration.
+* Redistribute the original or modified source code, provided that this license and all original copyright notices are preserved.
+
+### 2. PROHIBITED USE (COMMERCIAL RESTRICTIONS)
+The following actions are STRICTLY PROHIBITED without prior written consent from the Author:
+* Selling hardware devices pre-loaded with this software.
+* Using this software to manage processes for the production of goods intended for commercial sale.
+* Bundling this software as part of a paid service or commercial product.
+
+### 3. ATTRIBUTION
+Any redistribution of the software must retain the original copyright headers and a link to the original repository.
+
+### 4. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE AUTHOR SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, INCLUDING BUT NOT LIMITED TO EQUIPMENT DAMAGE OR PRODUCT LOSS ARISING FROM THE USE OF THIS SOFTWARE.
+
+---
+
+## РУССКАЯ ВЕРСИЯ
+
+### 1. РАЗРЕШЕННОЕ ИСПОЛЬЗОВАНИЕ
+Вам предоставляется неисключительная лицензия на:
+* Загрузку, компиляцию и использование ПО для личных, некоммерческих целей (домашнее пивоварение и дистилляция).
+* Модификацию исходного кода под ваше конкретное оборудование.
+* Распространение оригинального или измененного кода при условии сохранения данной лицензии и всех авторских заголовков.
+
+### 2. ЗАПРЕЩЕННОЕ ИСПОЛЬЗОВАНИЕ (КОММЕРЧЕСКИЕ ОГРАНИЧЕНИЯ)
+Следующие действия КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНЫ без письменного согласия Автора:
+* Продажа готовых устройств с предустановленным данным ПО.
+* Использование ПО для производства товаров, предназначенных для коммерческой продажи.
+* Перепродажа или включение ПО в состав платных услуг или продуктов.
+
+### 3. АВТОРСТВО
+При любом распространении кода обязательно сохранение ссылок на автора (Evgeny Yagzhin) и оригинальный репозиторий.
+
+### 4. ОТКАЗ ОТ ОТВЕТСТВЕННОСТИ
+ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ». АВТОР НЕ НЕСЕТ ОТВЕТСТВЕННОСТИ ЗА ЛЮБОЙ УЩЕРБ, ВКЛЮЧАЯ ПОРЧУ ОБОРУДОВАНИЯ ИЛИ ПОТЕРЮ ПРОДУКТА, ВОЗНИКШИЕ В РЕЗУЛЬТАТЕ ИСПОЛЬЗОВАНИЯ ДАННОГО ПО.
+
+---
+**💼 Commercial Licensing / Коммерческая лицензия:** mixeon@gmail.com

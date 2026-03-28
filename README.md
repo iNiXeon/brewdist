@@ -1,97 +1,72 @@
-# BrewDist Monitor (2026)
-Система дистанционного мониторинга и управления процессом дистилляции и затирания на базе **ESP32**. 
-Проект позволяет отслеживать температуру в кубе (T1) и на узле отбора (T2), управлять паузами затирания и получать уведомления в Telegram через Cloudflare Workers. Возможно добавление упправления ТЭНом и клапаном отбора.
+# BrewDist Monitor (2026) 🍺⚒️
+Система дистанционного мониторинга и управления процессом дистилляции и затирания на базе **ESP32-C3**.
+
+Проект позволяет отслеживать температуру в кубе (T1) и на царге/узле отбора (T2), управлять паузами затирания и получать уведомления в Telegram через Cloudflare Workers. Реализовано управление ТЭНом и звуковая индикация.
 
 ---
-### Поддержать (TON): UQCB4c5bfPCEyEc0H5RnqMjyHRagN9jybugF_vV614oPgZbs
+### Поддержать проект (TON): `UQCB4c5bfPCEyEc0H5RnqMjyHRagN9jybugF_vV614oPgZbs`
 ---
 
 ## 🛠 Аппаратная часть (Hardware)
 
 ### Используемые компоненты:
-* **Контроллер:** ESP32 (рекомендуется DevKit V1).
-* **Дисплей:** OLED 128x64 (драйвер SSD1306, подключение I2C).
-* **Датчики температуры:** Цифровые DS18B20 (2 шт.) на одной шине.
-* **Питание:** Стабильные 5V (минимум 1A).
+* **Контроллер:** ESP32-C3 (совместимо с другими ESP32 при переназначении пинов).
+* **Дисплей:** OLED 128x64 (I2C, библиотека GyverOLED).
+* **Датчики температуры:** DS18B20 (2 шт.) на одной шине OneWire.
+* **Управление:** 4 тактовые кнопки (Up, Down, Ok, Back) в составе дисплея.
 
-### Схема подключения (Pins):
-По умолчанию в коде используются следующие пины:
-* **DS18B20 (Шина OneWire):** Пин `GPIO 4`. Не забудьте подтягивающий резистор 4.7кОм между VCC и Данными.
-* **Дисплей OLED (I2C):** 
-  * `SCL` -> Пин `GPIO 6`
-  * `SDA` -> Пин `GPIO 5`
-* **Питание датчиков:** 3.3V или 5V (зависит от модели).
+### Схема подключения (Pins по умолчанию):
+В соответствии с актуальной прошивкой используются следующие пины:
+* **DS18B20 (OneWire):** Пин `GPIO 10` (требуется резистор 4.7кОм к 3.3V).
+* **Дисплей OLED (I2C):** 
+  * `SCL` -> Пин `GPIO 9`
+  * `SDA` -> Пин `GPIO 8`
+* **Исполнительные устройства:**
+  * `Реле/ТЭН` -> Пин `GPIO 2`
+  * `Buzzer (Пищалка)` -> Пин `GPIO 1`
+* **Кнопки:** `GPIO 6` (Up), `5` (Down), `4` (Ok), `3` (Back).
 
-> **Как изменить пины?**  
-> В начале файла `main.cpp` найдите строку `#define SENSOR_PIN 4` для датчиков и строку инициализации дисплея `u8x8(6, 5, ...)` для изменения I2C пинов.
+> **💡 Как изменить пины?** > Все настройки портов находятся в верхней части файла `main.cpp`. Для кнопок используются дефайны в начале файла.
 
 ---
 
-## ☁️ Настройка Cloudflare Worker
+## ☁️ Настройка Cloudflare Worker (Telegram Proxy)
 
-Для безопасной работы с Telegram API без прямого открытия портов используется прокси-воркер.
+Для стабильной работы с Telegram API без SSL-ошибок и блокировок используется прокси-воркер.
 
 1. Создайте аккаунт на [Cloudflare](https://dash.cloudflare.com/).
-2. Перейдите в **Build -> Compute -> Workers & Pages -> Create application**.
-3. Назовите его (например, `brew-tg-proxy`).
-4. Вставьте следующий код в редактор воркера:
+2. Перейдите в **Workers & Pages -> Create application**.
+3. Вставьте следующий код в редактор:
 
 ```javascript
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    
-    // 1. Проверка пути: работаем только с запросами к API Бота
-    if (!url.pathname.startsWith('/bot')) {
-      return new Response('Not Found', { status: 404 });
-    }
+    if (!url.pathname.startsWith('/bot')) return new Response('Not Found', { status: 404 });
 
-    // 2. Формируем целевой URL для Telegram
-    // Включаем url.search, чтобы поддерживать параметры и в строке (GET/URL params)
     const targetUrl = `https://api.telegram.org${url.pathname}${url.search}`;
-
-    // 3. Подготовка тела запроса (КРИТИЧЕСКИЙ МОМЕНТ)
-    // Читаем тело как Buffer, чтобы гарантированно передать его целиком
     let bodyContent = null;
-    if (request.method === 'POST' || request.method === 'PUT') {
-      try {
-        bodyContent = await request.arrayBuffer();
-      } catch (e) {
-        console.error("Ошибка чтения Body:", e.message);
-      }
-    }
+    if (request.method === 'POST') bodyContent = await request.arrayBuffer();
 
-    // 4. Создаем новый запрос к официальному API
     const modifiedRequest = new Request(targetUrl, {
       method: request.method,
       headers: {
-        // Пробрасываем важные заголовки, если они есть
         'Content-Type': request.headers.get('Content-Type') || 'application/json',
-        'Accept': '*/*',
         'User-Agent': 'Yagzhin-Brew-Monitor/1.1 (ESP32)',
       },
-      body: bodyContent,
-      redirect: 'follow'
+      body: bodyContent
     });
 
-    // 5. Выполняем запрос и возвращаем результат
     try {
       const response = await fetch(modifiedRequest);
-      
-      // Клонируем ответ, чтобы иметь возможность добавить CORS заголовки (если нужно будет для веб-морды)
       const newResponse = new Response(response.body, response);
       newResponse.headers.set('Access-Control-Allow-Origin', '*');
-      
       return newResponse;
     } catch (e) {
-      return new Response('Worker Proxy Error: ' + e.message, { 
-        status: 500,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      });
+      return new Response('Proxy Error: ' + e.message, { status: 500 });
     }
   }
 };
-```
 
 После публикации вы получите адрес вида brew-tg-proxy.ваш-ник.workers.dev. Его нужно будет ввести в настройках WiFi контроллера.
 
@@ -113,14 +88,14 @@ export default {
 <br> UTC Offset: Смещение часового пояса (например, 5 для Екатеринбурга).  
 <br> Нажмите Save. Контроллер перезагрузится и пришлет в Telegram сообщение: ✅ BrewDist Monitor Online.
 
-## Данное программное обеспечение предоставляется на условиях Custom Non-Commercial License:
+## 📄 License & Usage
+Данное программное обеспечение предоставляется на условиях Custom Non-Commercial License:
 
 <br> Личное использование: Бесплатно и без ограничений.
 <br> Копирайт: При использовании кода в своих открытых проектах обязательна ссылка на автора и сохранение заголовков в файлах.
 <br> Коммерческое использование: ЗАПРЕЩЕНО без письменного согласия автора. Это включает продажу готовых устройств с данным кодом или использование кода для оказания платных услуг.
 <br> Для получения коммерческой лицензии свяжитесь со мной: [mixeon@gmail.com]
 
-## 📄 License & Usage
 
 This project is licensed under a **Custom Non-Commercial License**. 
 
