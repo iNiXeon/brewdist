@@ -6,6 +6,7 @@ extern Config config;
 extern State state;
 
 MenuBase* TelegramManager::getActiveMenu() {
+    if (state.heaterMode) return (MenuBase *)&heaterMenu;
     return state.mashMode ? (MenuBase *)&mashMenu : (MenuBase *)&distillMenu;
 }
 

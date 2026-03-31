@@ -1,7 +1,4 @@
 #pragma once
-#ifndef HEATER_H
-#define HEATER_H
-
 #include <Arduino.h>
 
 class Heater {
@@ -10,7 +7,11 @@ private:
     float _targetKW;
     int _nominalWatt;
     int _lossWatt;
-    int _currentDuty;
+    
+    // Переменные для алгоритма медленного ШИМ
+    unsigned long _windowStartTime;
+    unsigned long _onTimeMs;
+    const unsigned long _pwmPeriod = 1000; // Период ШИМ: 1 секунда (1000 мс)
 
     void calculatePhysics();
 
@@ -22,11 +23,8 @@ public:
     void stop();
     void tick();
 
-    // Геттеры
     float getTargetKW();
     int getNominal();
     int getLosses();
     int getDutyPercent();
 };
-
-#endif

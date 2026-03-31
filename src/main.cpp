@@ -25,7 +25,7 @@
 #define SENSOR_PIN 10
 #define SCL_PIN 9
 #define SDA_PIN 8
-#define RELAY_PIN 2
+#define HEATER_PIN 2
 #define BUZZER_PIN 1
 #define BUZZER_CHANNEL 0
 #define BUZZER_RES LEDC_TIMER_13_BIT
@@ -35,7 +35,14 @@ uButton btnDown(5);
 uButton btnOk(4);
 uButton btnBack(3);
 
+String apWiFiName = "BREW_CTRL";
 uint32_t sensorTimer = 0;
+
+// Реализация программного нажатия кнопки для пробуждения повышающего преобразователя
+const int WAKE_PIN = 0;
+const uint32_t WAKE_INTERVAL = 10000; // Интервал между импульсами (10 секунд)
+uint32_t wakeTimer = 0;
+bool isPulsing = false;
 
 OneWire oneWire(SENSOR_PIN);
 DallasTemperature sensors(&oneWire);
@@ -43,7 +50,7 @@ GyverOLED<SSD1306_128x64, OLED_NO_BUFFER> oled;
 
 const char *ntpServer = "pool.ntp.org";
 
-Config config; 
+Config config;
 State state;
 
 namespace Buzzer
@@ -135,7 +142,7 @@ void saveSettings()
 void requestTgUpdate(bool force = false);
 
 TelegramManager bot;
-Heater tankHeater(RELAY_PIN); 
+Heater tankHeater(HEATER_PIN);
 
 void requestTgUpdate(bool force)
 {
@@ -206,6 +213,7 @@ void handleCubeTempLogic()
   if (reached)
   {
     Buzzer::signal();
+    tankHeater.stop();
     state.isWaitForHeat = false;
     TGClient::sendAlert((state.isHeating ? "✅ Нагрев завершен!" : "✅ Охлаждение завершено!") + String("\nТемпература: ") + String(state.currentT1, 1) + "°C");
     saveSettings();
@@ -261,6 +269,10 @@ void networkTask(void *pvParameters)
   }
 }
 
+void syncHeater() {
+    tankHeater.setHardware(config.heaterPowerWatt, config.powerLossWatt);
+    tankHeater.setPowerKW(config.targetPowerKW);
+}
 void setup()
 {
   Serial.begin(115200);
@@ -270,15 +282,18 @@ void setup()
   sensors.begin();
   sensors.setWaitForConversion(false);
   sensors.requestTemperatures();
-  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(HEATER_PIN, OUTPUT);
+  pinMode(WAKE_PIN, INPUT);
   state.currentT1 = sensors.getTempCByIndex(0);
   state.currentT2 = sensors.getTempCByIndex(1);
   LittleFS.begin(true);
   loadSettings();
 
   oled.clear();
-  oled.print("AP WiFi: BREW_CTRL");
-
+  oled.setScale(2);
+  oled.print("Точка WiFi:");
+  oled.setCursor(0, 3);
+  oled.print(apWiFiName);
 
   WiFiManager wm;
   char tzStr[4];
@@ -295,7 +310,7 @@ void setup()
   wm.addParameter(&custom_tg_chat_id);
   wm.addParameter(&custom_tz);
 
-  if (!wm.autoConnect("BREW_CTRL"))
+  if (!wm.autoConnect(apWiFiName.c_str()))
   {
     delay(5000);
     ESP.restart();
@@ -322,6 +337,9 @@ void setup()
   xTaskCreatePinnedToCore(networkTask, "Net", 10000, NULL, 1, NULL, 0);
   localMenu.init();
   Buzzer::init();
+  tankHeater.init();
+  tankHeater.setHardware(config.heaterPowerWatt, config.powerLossWatt);
+  tankHeater.setPowerKW(0.0);
 }
 
 void loop()
@@ -337,5 +355,24 @@ void loop()
     state.currentT1 = sensors.getTempCByIndex(0);
     state.currentT2 = sensors.getTempCByIndex(1);
   }
+  
   localMenu.tick();
+  tankHeater.tick();
+
+  if (millis() - wakeTimer >= (isPulsing ? 100 : WAKE_INTERVAL))
+  {
+    wakeTimer = millis();
+    isPulsing = !isPulsing; // Переключаем состояние
+
+    // Управление пином для пробуждения повышающего преобразователя
+    if (isPulsing)
+    {
+      pinMode(WAKE_PIN, OUTPUT);
+      digitalWrite(WAKE_PIN, LOW); // Замыкаем на землю
+    }
+    else
+    {
+      pinMode(WAKE_PIN, INPUT); // Разомкнуто (режим высокого сопротивления)
+    }
+  }
 }

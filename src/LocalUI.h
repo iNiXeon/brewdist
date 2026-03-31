@@ -6,6 +6,7 @@
 enum MenuState {
     DASHBOARD,
     MAIN_MENU,
+    SUB_HEATER,
     SUB_KUB,
     SUB_SEL,
     SUB_COL,
@@ -37,6 +38,7 @@ private:
     // Экраны
     void drawDash();
     void drawMain();
+    void drawSubHeater();
     void drawSubKub();
     void drawSubSel();
     void drawSubCol();

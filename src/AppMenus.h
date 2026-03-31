@@ -14,3 +14,10 @@ public:
     String getSpecificStatusText() override;
     void processSpecificCallback(const String &data) override;
 };
+
+class HeaterMenu : public MenuBase {
+public:
+        String getKeyboard() override;
+    String getSpecificStatusText() override;
+    void processSpecificCallback(const String &data) override;
+};

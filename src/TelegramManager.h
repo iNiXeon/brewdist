@@ -8,7 +8,7 @@ private:
     unsigned long lastAutoSend = 0;
     DistillMenu distillMenu;
     MashMenu mashMenu;
-
+    HeaterMenu heaterMenu;
     MenuBase *getActiveMenu();
 
 public:
